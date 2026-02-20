@@ -1,61 +1,75 @@
-# Bandit Level 0 → 1
+# Bandit Level 1 → Level 2
 
-## Level Goal
+## Objective
 
-The password for the next level is stored in a file called `readme` located in the home directory.
-
-After retrieving it, use SSH (port 2220) to log into `bandit1`.
+Retrieve the password stored in a file named `-`.
 
 ---
 
-##  Commands Used
+## Problem
 
-- `ls`
-- `cat`
-
----
-
-## Solution Steps
-
-### List files in the home directory
+Running:
 
 ```bash
-ls
+cat -
 ```
 
-Output:
+did not display the file contents. Instead, the command waited for input.
 
-```
-readme
-```
+This occurs because many Unix tools interpret `-` as standard input (stdin), not as a literal filename.
 
 ---
 
-### Display the contents of the file
+## Key Concepts
+
+- Special argument handling in Unix commands  
+- Standard input (stdin)  
+- Command-line argument parsing  
+- Filename disambiguation  
+
+---
+
+## Solution
+
+To treat `-` as a filename rather than stdin, it must be referenced explicitly:
 
 ```bash
-cat readme
+cat ./-
 ```
 
-Output:
-
-```
-<level-1-password>
-```
-
----
-
-### Login to the next level
+or
 
 ```bash
-ssh bandit1@bandit.labs.overthewire.org -p 2220
+cat -- -
 ```
 
 ---
 
-## 🧠 What I Learned
+## Explanation
 
-- How to list files in a directory using `ls`
-- How to read file contents using `cat`
-- Basic Linux home directory navigation
-- The importance of securely storing credentials
+- `./-` specifies a file named `-` in the current directory.
+- `--` marks the end of command options, forcing the following argument to be interpreted strictly as a filename.
+
+The issue was not file access, but argument interpretation.
+
+---
+
+## Key Takeaways
+
+- The shell parses arguments before command execution.
+- Many Unix tools reserve `-` to represent stdin.
+- Explicit disambiguation prevents unintended behavior.
+- Accurate command construction avoids subtle errors.
+
+---
+
+## Practical Relevance
+
+This pattern applies directly to:
+
+- Writing reliable shell scripts  
+- Handling edge-case filenames  
+- Automating system tasks  
+- Preventing parsing-related bugs in production  
+
+Understanding how commands interpret arguments improves reliability and debugging efficiency.
