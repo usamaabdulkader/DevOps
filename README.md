@@ -1,6 +1,6 @@
 # DevOps
 
-This repository documents hands-on progression across core DevOps skill areas, beginning with Linux fundamentals and Bash scripting.
+Hands-on DevOps practice repository documenting practical skill-building across automation, infrastructure, and systems engineering.
 
 The structure is organized by focus area, with each directory containing practical exercises and structured challenges.
 
