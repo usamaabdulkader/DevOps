@@ -1,8 +1,13 @@
-echo "Enter source directory:"
-read dir
+#!/bin/bash
+# backup_txt.sh
+# Description: Backs up all .txt files from a source directory
+#              into a timestamped backup directory.
+# Usage: ./backup_txt.sh
+
+read -p "Enter source directory: " dir
 
 if [ ! -d "$dir" ]; then
-    echo "No Directory Found"
+    echo "No directory found."
     exit 1
 fi
 
@@ -16,8 +21,7 @@ echo "Copying .txt files..."
 
 count=0
 
-for file in "$dir"/*.txt
-do
+for file in "$dir"/*.txt; do
     [ -e "$file" ] || continue
     cp "$file" "$backup_dir"
     ((count++))

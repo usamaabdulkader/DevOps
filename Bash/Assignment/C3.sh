@@ -1,29 +1,33 @@
-echo "enter"
-read file
+#!/bin/bash
+# file_checker.sh
+# Description: Checks whether a file exists and reports its permissions.
+# Usage: ./file_checker.sh
 
-if [ -e "$file" ]
-then
-    if [ -r "$file" ]
-    then
-    echo "$file is readable"
+read -p "Enter filename to check: " file
+
+if [ -e "$file" ]; then
+    echo "File '$file' exists."
+
+    # Check readability
+    if [ -r "$file" ]; then
+        echo "✓ File is readable"
     else
-    echo "$file isnt readable"
+        echo "✗ File is not readable"
     fi
 
-    if [ -w "$file" ]
-    then
-    echo "$file is Writable"
+    # Check writability
+    if [ -w "$file" ]; then
+        echo "✓ File is writable"
     else
-    echo "$file isnt Writable"
+        echo "✗ File is not writable"
     fi
 
-    if [ -x "$file" ]
-    then
-    echo "$file is executable"
+    # Check executability
+    if [ -x "$file" ]; then
+        echo "✓ File is executable"
     else
-    echo "$file isnt executable"
+        echo "✗ File is not executable"
     fi
-
 else
-    echo "$file not found"
+    echo "File '$file' not found."
 fi
