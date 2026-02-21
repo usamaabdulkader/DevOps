@@ -6,7 +6,7 @@ The structure is organized by focus area, with each directory containing practic
 
 ---
 
-## Current Focus Areas
+## Areas Covered
 
 - **Linux Fundamentals** – OverTheWire Bandit walkthrough and command-line exploration.
 - **Bash Scripting** – Foundational scripting exercises and a progressive, level-based challenge project.
