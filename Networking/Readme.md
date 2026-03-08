@@ -6,8 +6,10 @@ A hands-on infrastructure project demonstrating how to deploy a public web serve
 This project brings together several core networking and cloud concepts including DNS resolution, IP addressing, firewall rules, HTTP traffic, and Linux server configuration.
 
 🌐 **Live Website:**  
-https://usamaabdulkader.com
 
+![Live Site](Images/Site.gif)
+
+url: https://usamaabdulkader.com
 ---
 
 # Project Summary
@@ -17,12 +19,6 @@ The objective of this project was to deploy a working web server on a cloud inst
 Starting from a fresh EC2 instance, I installed and configured NGINX, connected a personal domain using Cloudflare DNS, and enabled HTTPS to serve a secure webpage.
 
 This lab demonstrates the full flow of internet traffic from a user’s browser to a cloud-hosted web server.
-
----
-
-# Architecture
-
-![Architecture](Images/Architecture.png)
 
 ---
 
@@ -39,16 +35,9 @@ This lab demonstrates the full flow of internet traffic from a user’s browser 
 
 ---
 
-# What Was Built
+# Architecture
 
-- A public EC2 instance running Amazon Linux
-- NGINX installed and configured as the web server
-- A personal domain linked to the EC2 instance via Cloudflare DNS
-- Security group rules configured to allow HTTP and HTTPS traffic
-- A custom HTML homepage deployed to the NGINX web root
-- HTTPS enabled through Cloudflare SSL
-
-The final result is a publicly accessible website hosted on AWS and reachable through a custom domain.
+![Architecture](Images/Architecture.png)
 
 ---
 
@@ -61,6 +50,19 @@ The final result is a publicly accessible website hosted on AWS and reachable th
 5. The security group allows inbound HTTP/HTTPS traffic.
 6. NGINX receives the request on the EC2 instance.
 7. The static webpage is returned to the user’s browser.
+
+---
+
+# What Was Built
+
+- A public EC2 instance running Amazon Linux
+- NGINX installed and configured as the web server
+- A personal domain linked to the EC2 instance via Cloudflare DNS
+- Security group rules configured to allow HTTP and HTTPS traffic
+- A custom HTML homepage deployed to the NGINX web root
+- HTTPS enabled through Cloudflare SSL
+
+The final result is a publicly accessible website hosted on AWS and reachable through a custom domain.
 
 ---
 
@@ -134,7 +136,7 @@ Create the following DNS records:
 
 | Type  | Name | Target              |
 | ----- | ---- | ------------------- |
-| CNAME | www  | usamaabdulkader.com |
+| CNAME | www  | domain |
 
 ---
 
@@ -181,7 +183,7 @@ Enable:
 
 ## Live Website
 
-![Live Site](Images/Site.gif)
+
 
 ---
 
@@ -227,4 +229,5 @@ HTTPS was enabled by configuring Cloudflare SSL and enabling **Always Use HTTPS*
 * Automate infrastructure provisioning using Terraform
 * Configure CI/CD pipeline for automated deployments
 * Deploy backend services behind an NGINX reverse proxy
+
 
