@@ -8,7 +8,7 @@ This project brings together several core networking and cloud concepts includin
 🌐 **Live Website:**  
 https://usamaabdulkader.com
 
-*(This demo will only be live temporarily for the Networking module.)*
+*(The EC2 instance may be stopped periodically to avoid unnecessary cloud costs.)*
 
 ![Live Site](Images/Site.gif)
 
@@ -233,6 +233,7 @@ HTTPS was enabled by configuring Cloudflare SSL and enabling **Always Use HTTPS*
 * Automate infrastructure provisioning using Terraform
 * Configure CI/CD pipeline for automated deployments
 * Deploy backend services behind an NGINX reverse proxy
+
 
 
 
