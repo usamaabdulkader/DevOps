@@ -185,12 +185,6 @@ Enable:
 
 ---
 
-## Live Website
-
-
-
----
-
 # Challenges Faced
 
 ### Cloudflare Error 521
@@ -233,6 +227,7 @@ HTTPS was enabled by configuring Cloudflare SSL and enabling **Always Use HTTPS*
 * Automate infrastructure provisioning using Terraform
 * Configure CI/CD pipeline for automated deployments
 * Deploy backend services behind an NGINX reverse proxy
+
 
 
 
