@@ -6,10 +6,12 @@ A hands-on infrastructure project demonstrating how to deploy a public web serve
 This project brings together several core networking and cloud concepts including DNS resolution, IP addressing, firewall rules, HTTP traffic, and Linux server configuration.
 
 🌐 **Live Website:**  
+https://usamaabdulkader.com
+
+*(This demo will only be live temporarily for the Networking module.)*
 
 ![Live Site](Images/Site.gif)
 
-url: https://usamaabdulkader.com
 ---
 
 # Project Summary
@@ -36,6 +38,8 @@ This lab demonstrates the full flow of internet traffic from a user’s browser 
 ---
 
 # Architecture
+
+The following diagram illustrates how client traffic flows from a user’s browser through Cloudflare DNS and into the AWS-hosted NGINX web server.
 
 ![Architecture](Images/Architecture.png)
 
@@ -136,7 +140,7 @@ Create the following DNS records:
 
 | Type  | Name | Target              |
 | ----- | ---- | ------------------- |
-| CNAME | www  | domain |
+| CNAME | www  | @ |
 
 ---
 
@@ -229,5 +233,6 @@ HTTPS was enabled by configuring Cloudflare SSL and enabling **Always Use HTTPS*
 * Automate infrastructure provisioning using Terraform
 * Configure CI/CD pipeline for automated deployments
 * Deploy backend services behind an NGINX reverse proxy
+
 
 
