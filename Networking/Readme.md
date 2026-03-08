@@ -157,31 +157,31 @@ Enable:
 
 ## EC2 Instance Running
 
-![EC2 Instance](screenshots/ec2-instance.png)
+![EC2 Instance](Images/EC2_instance.png)
 
 ---
 
 ## Security Group Rules
 
-![Security Group](screenshots/ec2-security-group.png)
+![Security Group](Images/Security_Group.png)
 
 ---
 
 ## Cloudflare DNS Configuration
 
-![Cloudflare DNS](screenshots/cloudflare-dns.png)
+![Cloudflare DNS](Images/DNS.png)
 
 ---
 
 ## Cloudflare SSL Settings
 
-![Cloudflare SSL](screenshots/cloudflare-ssl.png)
+![Cloudflare SSL](Images/SSL.png)
 
 ---
 
 ## Live Website
 
-![Live Site](screenshots/live-site.png)
+![Live Site](Images/Site.gif)
 
 ---
 
@@ -227,15 +227,4 @@ HTTPS was enabled by configuring Cloudflare SSL and enabling **Always Use HTTPS*
 * Automate infrastructure provisioning using Terraform
 * Configure CI/CD pipeline for automated deployments
 * Deploy backend services behind an NGINX reverse proxy
-
----
-
-# Author
-
-**Usama Abdul Kader**
-
-Website: [https://usamaabdulkader.com](https://usamaabdulkader.com)
-LinkedIn: [https://linkedin.com/in/usamaabdulkader](https://linkedin.com/in/usamaabdulkader)
-
-```
 
