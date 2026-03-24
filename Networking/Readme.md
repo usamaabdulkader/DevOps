@@ -6,7 +6,7 @@ A hands-on infrastructure project demonstrating how to deploy a public web serve
 This project brings together several core networking and cloud concepts including DNS resolution, IP addressing, firewall rules, HTTP traffic, and Linux server configuration.
 
 🌐 **Live Website:**  
-https://usamaabdulkader.com
+https://www.usamaabdulkader.com
 
 *(The EC2 instance may be stopped periodically to avoid unnecessary cloud costs.)*
 
