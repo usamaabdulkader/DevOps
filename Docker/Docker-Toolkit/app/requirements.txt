@@ -1,0 +1,7 @@
+flask
+redis
+requests
+pyyaml
+gunicorn
+flask-socketio>=5.3
+eventlet>=0.35

@@ -1,0 +1,39 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Install Docker CLI + hadolint + Trivy
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates curl gnupg wget \
+    && install -m 0755 -d /etc/apt/keyrings \
+    && curl -fsSL https://download.docker.com/linux/debian/gpg \
+    | gpg --dearmor -o /etc/apt/keyrings/docker.gpg \
+    && chmod a+r /etc/apt/keyrings/docker.gpg \
+    && echo \
+    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian bookworm stable" \
+    > /etc/apt/sources.list.d/docker.list \
+    && curl -fsSL https://aquasecurity.github.io/trivy-repo/deb/public.key \
+    | gpg --dearmor -o /etc/apt/keyrings/trivy.gpg \
+    && chmod a+r /etc/apt/keyrings/trivy.gpg \
+    && echo \
+    "deb [signed-by=/etc/apt/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" \
+    > /etc/apt/sources.list.d/trivy.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends docker-ce-cli docker-compose-plugin trivy \
+    && wget -qO /usr/local/bin/hadolint \
+    https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-arm64 \
+    && chmod +x /usr/local/bin/hadolint \
+    && apt-get purge -y wget gnupg \
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY redis_keys.py app.py scanner.py ./
+COPY tools/ ./tools/
+COPY templates/ ./templates/
+COPY static/ ./static/
+
+EXPOSE 5000
+CMD ["gunicorn", "--worker-class", "eventlet", "-w", "1", "--bind", "0.0.0.0:5000", "app:app"]
