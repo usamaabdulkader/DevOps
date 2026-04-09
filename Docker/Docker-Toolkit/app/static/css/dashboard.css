@@ -209,6 +209,7 @@ body{background:var(--bg);color:var(--text);height:100dvh;overflow:hidden;
 .d-p{background:var(--blue);box-shadow:0 0 5px rgba(121,192,255,.4);animation:blink .9s ease-in-out infinite}
 .d-c{background:var(--green)}
 .d-f{background:var(--red)}
+.d-w{background:var(--yellow);box-shadow:0 0 5px rgba(227,179,65,.4)}
 .scan-info .scan-tool{font-size:.73rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .scan-info .scan-meta{font-size:.6rem;color:var(--muted);font-family:monospace;margin-top:1px}
 .scan-badge{font-size:.57rem;font-weight:700;padding:2px 6px;border-radius:999px;
@@ -217,6 +218,7 @@ body{background:var(--bg);color:var(--text);height:100dvh;overflow:hidden;
 .b-p{background:var(--blue-d);color:var(--blue)}
 .b-c{background:var(--green-d);color:var(--green)}
 .b-f{background:var(--red-d);color:var(--red)}
+.b-w{background:var(--yellow-d);color:var(--yellow)}
 .scan-time{font-size:.6rem;color:var(--muted);font-family:monospace;white-space:nowrap}
 
 /* Empty feed state */

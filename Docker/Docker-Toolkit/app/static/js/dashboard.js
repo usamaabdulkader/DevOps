@@ -1,3 +1,4 @@
+// dashboard.js — fixed build
 // ── Tool definitions ──────────────────────────────────────────
 const TOOL_ICONS = {
   lint: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>`,
@@ -97,6 +98,7 @@ function lineStatus(l) {
   if (l.startsWith("[SCORE]")) return "score";
   return "";
 }
+
 // ── Build sidebar nav ─────────────────────────────────────────
 let activeTool = null;
 const toolNav = document.getElementById("tool-nav");
@@ -115,7 +117,6 @@ TOOLS.forEach((t) => {
 function selectTool(t) {
   activeTool = t;
 
-  // Switch to Analyse tab
   document.querySelectorAll(".rp-tab").forEach((tab) => {
     tab.classList.toggle("active", tab.dataset.tab === "run");
   });
@@ -123,17 +124,14 @@ function selectTool(t) {
     p.classList.toggle("active", p.id === "tab-run");
   });
 
-  // Highlight sidebar item
   document
     .querySelectorAll(".sb-item")
     .forEach((el) => el.classList.toggle("active", el.dataset.id === t.id));
 
-  // Update tool selector display
   const sel = document.getElementById("tool-sel");
   sel.innerHTML = TOOL_ICONS[t.id] + "&nbsp;&nbsp;" + t.name;
   sel.className = "tool-sel picked";
 
-  // Show instructions
   const hint = document.getElementById("tool-instructions");
   if (t.instructions) {
     hint.innerHTML = t.instructions;
@@ -142,7 +140,6 @@ function selectTool(t) {
     hint.style.display = "none";
   }
 
-  // Update textarea placeholder
   document.getElementById("payload").placeholder =
     t.hint || "Paste your input here…";
 
@@ -216,6 +213,45 @@ function toast(icon, msg, sub) {
 let scanCache = {};
 const STATUS_DOT = { pending: "q", running: "p", passed: "c", failed: "f" };
 
+// ── Status helpers (warn-aware) ───────────────────────────────
+function getScanDot(s) {
+  if (s.status === "failed") return "f";
+  if (s.status === "running") return "p";
+  if (s.status === "pending") return "q";
+  try {
+    JSON.parse(s.result);
+    return "c";
+  } catch (e) {}
+  const hasWarn = (s.result || "")
+    .split(" | ")
+    .some((l) => l.trim().startsWith("[WARN]"));
+  return hasWarn ? "w" : "c";
+}
+function scanStatusLabel(s) {
+  const dot = getScanDot(s);
+  const map = {
+    pending: "PENDING",
+    running: "SCANNING",
+    passed: "PASSED",
+    failed: "FAILED",
+  };
+  return dot === "w" ? "WARNED" : map[s.status] || s.status.toUpperCase();
+}
+function scanStatusColor(s) {
+  if (s.status === "failed") return "var(--red)";
+  try {
+    JSON.parse(s.result);
+    return "var(--green)";
+  } catch (e) {}
+  const hasWarn = (s.result || "")
+    .split(" | ")
+    .some((l) => l.trim().startsWith("[WARN]"));
+  if (s.status === "passed" && hasWarn) return "var(--yellow)";
+  if (s.status === "passed") return "var(--green)";
+  if (s.status === "running") return "var(--blue)";
+  return "var(--yellow)";
+}
+
 function parseResult(raw) {
   return (raw || "")
     .split(" | ")
@@ -229,7 +265,6 @@ function selectScan(id) {
     .forEach((el) => el.classList.toggle("selected", el.dataset.id === id));
   showResult(id);
 
-  // Switch to Report tab
   document.querySelectorAll(".rp-tab").forEach((tab) => {
     tab.classList.toggle("active", tab.dataset.tab === "result");
   });
@@ -288,15 +323,7 @@ function renderSecurityScan(s, data) {
   document.getElementById("res-pane").innerHTML = `
     <div class="res-meta">
       <span class="res-tag">ID: <b>#${s.id}</b></span>
-      <span class="res-tag">Status: <b style="color:${
-        s.status === "passed"
-          ? "var(--green)"
-          : s.status === "failed"
-            ? "var(--red)"
-            : s.status === "running"
-              ? "var(--blue)"
-              : "var(--yellow)"
-      }">${STATUS_LABEL[s.status] || s.status}</b></span>
+      <span class="res-tag">Status: <b style="color:${scanStatusColor(s)}">${scanStatusLabel(s)}</b></span>
       <span class="res-tag">At: <b>${s.submitted}</b></span>
       <span class="res-tag">Duration: <b>${s.duration !== "-" ? s.duration + "s" : "—"}</b></span>
     </div>
@@ -312,9 +339,9 @@ function renderSecurityScan(s, data) {
     <div class="sec-vulns">${vulnRows}</div>
     ${note}
     <div class="res-line" data-s="score">
-  <span class="res-tag-pill tag-score">SCORE</span>
-  <span class="res-body">Security verdict: ${data.grade} — ${data.total} CVEs total</span>
-  </div>`;
+      <span class="res-tag-pill tag-score">SCORE</span>
+      <span class="res-body">Security verdict: ${data.grade} — ${data.total} CVEs total</span>
+    </div>`;
 }
 
 function renderImageSize(s, data) {
@@ -345,15 +372,7 @@ function renderImageSize(s, data) {
   document.getElementById("res-pane").innerHTML = `
     <div class="res-meta">
       <span class="res-tag">ID: <b>#${s.id}</b></span>
-      <span class="res-tag">Status: <b style="color:${
-        s.status === "passed"
-          ? "var(--green)"
-          : s.status === "failed"
-            ? "var(--red)"
-            : s.status === "running"
-              ? "var(--blue)"
-              : "var(--yellow)"
-      }">${STATUS_LABEL[s.status] || s.status}</b></span>
+      <span class="res-tag">Status: <b style="color:${scanStatusColor(s)}">${scanStatusLabel(s)}</b></span>
       <span class="res-tag">At: <b>${s.submitted}</b></span>
       <span class="res-tag">Duration: <b>${s.duration !== "-" ? s.duration + "s" : "—"}</b></span>
     </div>
@@ -372,16 +391,15 @@ function renderImageSize(s, data) {
     <div class="is-note">Bar widths and sizes are uncompressed weights from docker history.
 Total compressed size reported by docker image inspect.</div>
     <div class="res-line" data-s="score">
-  <span class="res-tag-pill tag-score">SCORE</span>
-  <span class="res-body">Size verdict: ${data.grade} — ${data.total_mb} MB</span>`;
+      <span class="res-tag-pill tag-score">SCORE</span>
+      <span class="res-body">Size verdict: ${data.grade} — ${data.total_mb} MB</span>
+    </div>`;
 }
-
 
 function showResult(id) {
   const s = scanCache[id];
   if (!s) return;
 
-  // Structured JSON response (image_size / security_scan tools)
   try {
     const data = JSON.parse(s.result);
     if (data.__type === "image_size") {
@@ -394,20 +412,11 @@ function showResult(id) {
     }
   } catch (e) {}
 
-  // Standard pipe-delimited response (all other tools)
   const lines = parseResult(s.result);
   document.getElementById("res-pane").innerHTML = `
   <div class="res-meta">
     <span class="res-tag">ID: <b>#${s.id}</b></span>
-    <span class="res-tag">Status: <b style="color:${
-      s.status === "passed"
-        ? "var(--green)"
-        : s.status === "failed"
-          ? "var(--red)"
-          : s.status === "running"
-            ? "var(--blue)"
-            : "var(--yellow)"
-    }">${STATUS_LABEL[s.status] || s.status}</b></span>
+    <span class="res-tag">Status: <b style="color:${scanStatusColor(s)}">${scanStatusLabel(s)}</b></span>
     <span class="res-tag">At: <b>${s.submitted}</b></span>
     <span class="res-tag">Duration: <b>${s.duration !== "-" ? s.duration + "s" : "—"}</b></span>
   </div>
@@ -415,7 +424,7 @@ function showResult(id) {
     <div class="res-sect">Input</div>
     <div class="res-payload">${(s.payload || "").replace(/</g, "&lt;")}</div>
   </div>
-    <div>
+  <div>
     <div class="res-sect">Analysis</div>
     <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">
       ${
@@ -427,18 +436,16 @@ function showResult(id) {
               return `<div class="res-group-header">Service: ${l.slice(9, -1).trim().toLowerCase()}</div>`;
             const st = lineStatus(l);
             return `<div class="res-line" data-s="${st}">
-            ${st ? `<span class="res-tag-pill tag-${st}">${st.toUpperCase()}</span>` : ""}
-            <span class="res-body">${l.replace(/^\[\w+\]\s*/, "")}</span>
-          </div>`;
+              ${st ? `<span class="res-tag-pill tag-${st}">${st.toUpperCase()}</span>` : ""}
+              <span class="res-body">${l.replace(/^\[\w+\]\s*/, "")}</span>
+            </div>`;
           })
           .join("") ||
         '<div class="res-line" data-s="ok"><span class="res-body">Analysis complete — no issues found.</span></div>'
       }
     </div>
   </div>`;
-  
 }
-
 
 // ── Submit ────────────────────────────────────────────────────
 document.getElementById("run-btn").addEventListener("click", async () => {
@@ -465,11 +472,7 @@ document.getElementById("run-btn").addEventListener("click", async () => {
     ["image", "image_size", "security"].includes(activeTool.id) &&
     payload.includes("\n")
   ) {
-    toast(
-      "",
-      "One image only",
-      "Enter a single image name e.g. nginx:latest",
-    );
+    toast("", "One image only", "Enter a single image name e.g. nginx:latest");
     return;
   }
 
@@ -485,7 +488,6 @@ document.getElementById("run-btn").addEventListener("click", async () => {
       (r) => r.json(),
     );
     toast("", "Analysis queued", `scan #${res.scan_id} processing`);
-    // WS will push the update automatically — just toast and wait
     pendingAutoSelect = res.scan_id;
   } catch (err) {
     toast("", "Submit failed", err.message);
@@ -505,7 +507,6 @@ document.getElementById("refresh-btn").addEventListener("click", async () => {
 document.getElementById("clear-btn").addEventListener("click", async () => {
   if (!confirm("Clear all scans and reset stats?")) return;
   await fetch("/clear", { method: "POST" });
-  // feed_cleared WS event will reset UI
 });
 
 // ── WebSocket (socket.io) ─────────────────────────────────────
@@ -550,11 +551,10 @@ function upsertCard(s) {
   scanCache[s.id] = s;
   const feed = document.getElementById("feed");
 
-  // Remove empty state if present
   const empty = feed.querySelector(".empty");
   if (empty) empty.remove();
 
-  const dot = STATUS_DOT[s.status] || "q";
+  const dot = getScanDot(s);
   const prev = (s.payload || "").split("\n")[0].slice(0, 34);
   const html = `<div class="scan-card" data-id="${s.id}" onclick="selectScan('${s.id}')">
     <div class="scan-row">
@@ -563,7 +563,7 @@ function upsertCard(s) {
         <div class="scan-tool">${s.tool}</div>
         <div class="scan-meta">scan #${s.id} · ${prev}${prev.length >= 34 ? "…" : ""}</div>
       </div>
-      <span class="scan-badge b-${dot}">${STATUS_LABEL[s.status] || s.status.toUpperCase()}</span>
+      <span class="scan-badge b-${dot}">${scanStatusLabel(s)}</span>
       <span class="scan-time">${s.duration !== "-" ? s.duration + "s" : s.submitted}</span>
     </div>
   </div>`;
@@ -575,12 +575,10 @@ function upsertCard(s) {
     feed.insertAdjacentHTML("afterbegin", html);
   }
 
-  // Update feed count
   const total = Object.keys(scanCache).length;
   document.getElementById("feed-ct").textContent =
     total + " scan" + (total !== 1 ? "s" : "");
 
-  // pendingAutoSelect is cleared once the scan completes (tab switch handled by scan_update)
   if (
     pendingAutoSelect === s.id &&
     (s.status === "passed" || s.status === "failed")
@@ -606,7 +604,7 @@ function renderFeedFromCache() {
   feed.innerHTML = items
     .slice(0, 100)
     .map((s) => {
-      const dot = STATUS_DOT[s.status] || "q";
+      const dot = getScanDot(s);
       const prev = (s.payload || "").split("\n")[0].slice(0, 34);
       return `<div class="scan-card" data-id="${s.id}" onclick="selectScan('${s.id}')">
       <div class="scan-row">
@@ -615,7 +613,7 @@ function renderFeedFromCache() {
           <div class="scan-tool">${s.tool}</div>
           <div class="scan-meta">scan #${s.id} · ${prev}${prev.length >= 34 ? "…" : ""}</div>
         </div>
-        <span class="scan-badge b-${dot}">${STATUS_LABEL[s.status] || s.status.toUpperCase()}</span>
+        <span class="scan-badge b-${dot}">${scanStatusLabel(s)}</span>
         <span class="scan-time">${s.duration !== "-" ? s.duration + "s" : s.submitted}</span>
       </div>
     </div>`;
@@ -629,7 +627,6 @@ const socket = io();
 
 socket.on("connect", async () => {
   console.log("WS connected:", socket.id);
-  // Load initial state on connect/reconnect
   try {
     const [scans, st] = await Promise.all([
       fetch("/scans").then((r) => r.json()),
@@ -648,7 +645,6 @@ socket.on("disconnect", () => {
 
 socket.on("scan_update", (scan) => {
   upsertCard(scan);
-  // Recount strip from cache
   const vals = Object.values(scanCache);
   const fsDone = document.getElementById("fs-done");
   const fsFail = document.getElementById("fs-fail");
@@ -660,7 +656,6 @@ socket.on("scan_update", (scan) => {
   if (fsProc)
     fsProc.textContent = vals.filter((s) => s.status === "running").length;
 
-  // Auto-switch to Report tab only when scan is done AND result is ready
   if (
     (scan.status === "passed" || scan.status === "failed") &&
     scan.result !== undefined
