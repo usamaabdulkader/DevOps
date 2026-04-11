@@ -122,26 +122,26 @@ def scan_image(content: str) -> str:
     priority = sorted(
         all_vulns,
         key=lambda v: SEVERITY_ORDER.index(v["severity"]) if v["severity"] in SEVERITY_ORDER else 99,
-    )[:10]
+    )
 
-    result = {
-        "__type": "security_scan",
-        "image": image,
-        "grade": grade,
-        "total": len(all_vulns),
-        "counts": counts,
-        "top_vulns": [
-            {
-                "id": v["id"],
-                "severity": v["severity"],
-                "icon": SEVERITY_ICON.get(v["severity"], "UNK"),
-                "pkg": v["pkg"],
-                "installed": v["installed"],
-                "fixed": v["fixed"],
-                "title": v["title"],
-            }
-            for v in priority
-        ],
+    def _fmt(v):                    
+        return {
+            "id":        v["id"],
+            "severity":  v["severity"],
+            "icon":      SEVERITY_ICON.get(v["severity"], "UNK"),
+            "pkg":       v["pkg"],
+            "installed": v["installed"],
+            "fixed":     v["fixed"],
+            "title":     v["title"],
+        }
+
+    result = {                      
+        "__type":    "security_scan",
+        "image":     image,
+        "grade":     grade,
+        "total":     len(all_vulns),
+        "counts":    counts,
+        "top_vulns": [_fmt(v) for v in priority],
     }
 
-    return json.dumps(result)
+    return json.dumps(result)       

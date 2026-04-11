@@ -16,7 +16,7 @@ services:
 
   scanner:
     build: ./app
-    command: python scanner.py
+    command: ["python", "scanner.py"]
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -26,9 +26,9 @@ services:
     restart: unless-stopped
     networks:
       - app-net
-    volumes:
-      # Mount Docker socket so the scanner can run `docker compose config`
+    volumes: # Mount Docker socket so the scanner can run `docker compose config`
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    stop_grace_period: 15s   # ← give SIGTERM handler time to run before SIGKILL
 
   redis:
     build: ./redis

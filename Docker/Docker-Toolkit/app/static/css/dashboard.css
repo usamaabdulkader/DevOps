@@ -416,3 +416,58 @@ textarea::placeholder{color:var(--faint);font-style:italic}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
 ::-webkit-scrollbar-thumb:hover{background:var(--border2)}
 
+/* ── PRINT STYLES ─────────────────────────────────────────── */
+@media print {
+  /* Hide UI chrome */
+  .topbar, .sidebar, .feed-wrap, .rp-tabs, .run-pane, .toast { display: none !important; }
+  .shell, .content { display: block !important; height: auto !important; overflow: visible !important; }
+  .rpanel { border: none !important; overflow: visible !important; }
+  .res-pane { overflow: visible !important; max-height: none !important; padding: 0 !important; }
+  .sec-vuln, .is-layer { break-inside: avoid; }
+  .res-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+
+  /* ── Preserve colours — remove the * { color:#000 } killer ── */
+  body {
+    background: #fff !important;
+    overflow: visible !important;
+    height: auto !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* Screen/print visibility toggles */
+  .sec-vuln-hidden { display: block !important; }
+  .print-only      { display: block !important; }
+  .screen-only     { display: none  !important; }
+}
+
+.sec-vuln-hidden { display: none; }        /* hidden on screen by default */
+.print-only      { display: none; }        /* only shown when printing */
+
+.statusbar {
+  background: var(--s1); border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 14px; font-size: .65rem; color: var(--muted);
+  height: 28px; flex-shrink: 0;
+}
+.sb-left  { display: flex; align-items: center; gap: 14px; }
+.sb-right { display: flex; align-items: center; gap: 10px; }
+.sb-engine {
+  display: flex; align-items: center; gap: 5px;
+  color: var(--green); font-weight: 600;
+}
+.sb-engine svg { stroke: currentColor; }
+.sb-version { color: var(--teal); font-weight: 600; }
+
+.sb-scanners-status {
+  display: flex; align-items: center; gap: 5px;
+  font-size: .65rem; color: var(--muted);
+  padding-left: 10px;
+  border-left: 1px solid var(--border);
+}
+.sb-scanners-status .sc-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green); flex-shrink: 0;
+  animation: blink 2.4s ease-in-out infinite;
+}

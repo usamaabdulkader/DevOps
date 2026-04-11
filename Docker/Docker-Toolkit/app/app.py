@@ -36,9 +36,28 @@ def _pubsub_listener() -> None:
         if message["type"] != "message":
             continue
         try:
-            scan = json.loads(message["data"])
-            socketio.emit("scan_update", scan)
-            logging.info(f"WS emit scan_update → {scan['id']} [{scan['status']}]")
+            data = json.loads(message["data"])
+
+            # ── scanner up/down ───────────────────────────────────────
+            if data.get("type") in ("scanner_up", "scanner_down"):
+                keys = {
+                    "total":    K.TOTAL_SCANS,
+                    "pending":  K.PENDING_SCANS,
+                    "running":  K.RUNNING_SCANS,
+                    "passed":   K.PASSED_SCANS,
+                    "failed":   K.FAILED_SCANS,
+                    "scanners": K.ACTIVE_SCANNERS,
+                    "visits":   K.VISITS,
+                }
+                st = {k: int(r.get(v) or 0) for k, v in keys.items()}
+                socketio.emit("stats_update", st)
+                logging.info(f"WS emit stats_update → scanner {data['type']}")
+                continue
+
+            # ── normal scan update ────────────────────────────────────
+            socketio.emit("scan_update", data)
+            logging.info(f"WS emit scan_update → {data['id']} [{data['status']}]")
+
         except (json.JSONDecodeError, KeyError) as e:
             logging.warning(f"Bad pub/sub message: {e}")
 
@@ -74,7 +93,7 @@ def analyse():
         "payload": payload,
         "status": "pending",
         "result": "",
-        "submitted": datetime.utcnow().strftime("%H:%M:%S"),
+        "submitted": datetime.utcnow().strftime("%H:%M:%S.%f")[:-3],
         "duration": "-",
     }
 

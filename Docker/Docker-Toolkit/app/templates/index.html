@@ -13,34 +13,31 @@
 <body>
 
   <!-- ── TOPBAR ──────────────────────────────────────────── -->
-  <header class="topbar">
-    <div class="brand">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="1.8"
+<header class="topbar">
+  <div class="brand">
+    <img width="24" height="24"
+      src="https://img.icons8.com/external-those-icons-flat-those-icons/24/external-Docker-Logo-social-media-those-icons-flat-those-icons.png"
+      alt="Docker">
+    Docker Toolkit
+    <span class="brand-sep">|</span>
+    <span class="brand-sub">Docker Analyser</span>
+  </div>
+  <div class="topbar-right">
+    <div class="t-pill">
+      <span class="live-dot"></span>
+      <span id="vc">0</span> visits
+    </div>
+    <button class="t-btn" id="theme-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
         stroke-linecap="round" stroke-linejoin="round">
-        <rect x="2" y="3" width="20" height="14" rx="2" />
-        <path d="M8 21h8M12 17v4" />
+        <circle cx="12" cy="12" r="5" />
+        <path
+          d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
       </svg>
-      Docker Toolkit
-      <span class="brand-sep">/</span>
-      <span class="brand-sub">Docker Analyser</span>
-    </div>
-    <div class="topbar-right">
-      <div class="t-pill">
-        <span class="live-dot"></span>
-        <span id="vc">0</span> visits
-      </div>
-      <button class="t-btn" id="theme-btn">
-        <!-- sun icon — shown in dark mode -->
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="5" />
-          <path
-            d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-        </svg>
-        Light
-      </button>
-    </div>
-  </header>
+      Light
+    </button>
+  </div>
+</header>
 
   <!-- ── APP SHELL ────────────────────────────────────────── -->
   <div class="shell">
@@ -57,18 +54,6 @@
       <div class="sb-section">
         <div class="sb-label">Tools</div>
         <div id="tool-nav"></div>
-      </div>
-
-      <!-- Scanner status -->
-      <div class="sb-scanners">
-        <div class="sb-sc-label">Scanners</div>
-        <div id="scanner-list">
-          <div class="sc-item">
-            <span class="sc-dot"></span>
-            <span class="sc-name">scanner-1</span>
-            <span class="sc-tag">ready</span>
-          </div>
-        </div>
       </div>
     </nav>
 
@@ -199,6 +184,22 @@
     </main>
   </div>
 
+  <div class="statusbar">
+    <div class="sb-left">
+      <div class="sb-engine">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path
+            d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+        </svg>
+        Engine running
+      </div>
+    </div>
+    <div class="sb-right">
+      <span class="sb-version">v1.0.0</span>
+    </div>
+  </div>
+
   <!-- ── TOAST ─────────────────────────────────────────────── -->
   <div class="toast" id="toast">
     <span id="t-icon"></span>
@@ -208,6 +209,7 @@
     </div>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 

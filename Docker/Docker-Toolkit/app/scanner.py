@@ -3,6 +3,9 @@ import json
 import time
 import logging
 import atexit
+import signal
+import sys
+import threading
 
 import redis
 
@@ -17,15 +20,30 @@ r = redis.Redis(
     decode_responses=True,
 )
 
+FAIL_GRADES = {"HIGH RISK", "CRITICAL RISK", "BLOATED"}
 
-def register() -> None:
+
+def register():
     r.set(K.ACTIVE_SCANNERS, 1)
+    r.publish("scan_events", json.dumps({"type": "scanner_up"}))
     logging.info("Scanner ready.")
 
 
-def deregister() -> None:
+def deregister():
     r.set(K.ACTIVE_SCANNERS, 0)
+    r.publish("scan_events", json.dumps({"type": "scanner_down"}))
     logging.info("Scanner offline.")
+
+
+def handle_shutdown(signum, frame):
+    deregister()
+    sys.exit(0)
+
+
+def _heartbeat():
+    while True:
+        r.set(K.ACTIVE_SCANNERS, 1, ex=15)
+        time.sleep(8)
 
 
 def _publish(scan: dict) -> None:
@@ -33,8 +51,31 @@ def _publish(scan: dict) -> None:
     r.publish("scan_events", json.dumps(scan))
 
 
+def _derive_status(result: str) -> str:
+    """
+    Determine pass/fail from a tool result string.
+
+    Two result formats exist:
+      1. Pipe-delimited text  →  check for [ERR] / [FAIL] tokens
+      2. JSON (image_size / security_scan)  →  check the 'grade' field
+    """
+    try:
+        data = json.loads(result)
+        if isinstance(data, dict) and data.get("grade") in FAIL_GRADES:
+            return "failed"
+        return "passed"
+    except (json.JSONDecodeError, TypeError):
+        pass
+
+    lines = result.split(" | ")
+    has_errors = any(
+        l.strip().startswith("[ERR]") or l.strip().startswith("[FAIL]")
+        for l in lines
+    )
+    return "failed" if has_errors else "passed"
+
+
 def run_scan(scan: dict) -> None:
-    # Mark as running
     scan["status"] = "running"
     r.hset(K.SCAN_RESULTS, scan["id"], json.dumps(scan))
     r.decr(K.PENDING_SCANS)
@@ -44,18 +85,11 @@ def run_scan(scan: dict) -> None:
     start = time.time()
     try:
         scan["result"] = run_tool(scan["tool"], scan["payload"])
-        
-        # ✅ FIX: derive status from result content, not just exception
-        result_lines = scan["result"].split(" | ")
-        has_errors = any(
-            l.strip().startswith("[ERR]") or l.strip().startswith("[FAIL]")
-            for l in result_lines
-        )
-        if has_errors:
-            scan["status"] = "failed"
+        scan["status"] = _derive_status(scan["result"])
+
+        if scan["status"] == "failed":
             r.incr(K.FAILED_SCANS)
         else:
-            scan["status"] = "passed"
             r.incr(K.PASSED_SCANS)
 
     except Exception as e:
@@ -69,12 +103,17 @@ def run_scan(scan: dict) -> None:
         _publish(scan)
 
     logging.info(f"Scan {scan['id']} → {scan['status']} ({scan['duration']}s)")
-    
 
 
 def main() -> None:
+    signal.signal(signal.SIGTERM, handle_shutdown)
+    signal.signal(signal.SIGINT, handle_shutdown)
+
     register()
     atexit.register(deregister)
+
+    threading.Thread(target=_heartbeat, daemon=True).start()
+
     logging.info("Listening for scans…")
 
     while True:
@@ -92,7 +131,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        logging.info("Scanner interrupted.")
+    main()

@@ -7,6 +7,12 @@ const TOOL_ICONS = {
   image_size: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><polyline points="8 21 12 17 16 21"/><line x1="2" y1="20" x2="22" y2="20"/></svg>`,
   security: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
 };
+const PRINT_BTN = `
+  <div style="margin-top:10px;display:flex;justify-content:flex-end">
+    <button onclick="downloadPDF()" class="act" style="font-size:.7rem;gap:5px">
+      🖨&nbsp;Export / Download PDF
+    </button>
+  </div>`;
 
 const TOOLS = [
   {
@@ -88,6 +94,99 @@ const TNAMES = {
   image_size: "Image Size Analyser",
   security: "Security Scanner",
 };
+
+function downloadPDF() {
+  const el = document.getElementById("res-pane");
+
+
+  // Save res-pane's own styles
+  const originalBg = el.style.background;
+  const originalColor = el.style.color;
+  el.style.background = "#0d1117";
+  el.style.color = "#e6edf3";
+
+
+  // Show/hide for export
+  el.querySelectorAll(".sec-vuln-hidden").forEach(
+    (v) => (v.style.display = "block"),
+  );
+  el.querySelectorAll(".screen-only").forEach(
+    (v) => (v.style.display = "none"),
+  );
+  el.querySelectorAll(".print-only").forEach(
+    (v) => (v.style.display = "block"),
+  );
+
+
+  // Snapshot + inline all computed styles so html2canvas sees them
+  const snapshots = [];
+  el.querySelectorAll("*").forEach((node) => {
+    const cs = getComputedStyle(node);
+    snapshots.push({
+      node,
+      bg: node.style.backgroundColor,
+      color: node.style.color,
+      border: node.style.borderColor,
+    });
+    if (cs.backgroundColor && cs.backgroundColor !== "rgba(0, 0, 0, 0)") {
+      node.style.setProperty(
+        "background-color",
+        cs.backgroundColor,
+        "important",
+      );
+    }
+    if (cs.color) {
+      node.style.setProperty("color", cs.color, "important");
+    }
+    if (cs.borderColor) {
+      node.style.setProperty("border-color", cs.borderColor, "important");
+    }
+  });
+
+
+  const imageName = (
+    el.querySelector(".is-image-name")?.textContent?.trim() || "scan-report"
+  ).replace(/[^a-zA-Z0-9._-]/g, "-"); // sanitise for filename
+
+
+  const opt = {
+    margin: [2, 2, 2, 2],
+    filename: `${imageName}.pdf`,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, backgroundColor: "#0d1117" },
+    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+  };
+
+
+  html2pdf()
+    .set(opt)
+    .from(el)
+    .save()
+    .then(() => {
+      // Restore res-pane
+      el.style.background = originalBg;
+      el.style.color = originalColor;
+
+
+      // Restore all child nodes
+      snapshots.forEach(({ node, bg, color, border }) => {
+        node.style.backgroundColor = bg;
+        node.style.color = color;
+        node.style.borderColor = border;
+      });
+
+
+      // Restore visibility
+      el.querySelectorAll(".sec-vuln-hidden").forEach(
+        (v) => (v.style.display = ""),
+      );
+      el.querySelectorAll(".screen-only").forEach(
+        (v) => (v.style.display = ""),
+      );
+      el.querySelectorAll(".print-only").forEach((v) => (v.style.display = ""));
+    });
+}
+
 
 function lineStatus(l) {
   if (l.startsWith("[OK]")) return "ok";
@@ -274,6 +373,8 @@ function selectScan(id) {
 }
 
 function renderSecurityScan(s, data) {
+  const SCREEN_LIMIT = 10;
+
   const gradeColor = {
     CLEAN: "var(--green)",
     "LOW RISK": "var(--teal)",
@@ -301,8 +402,8 @@ function renderSecurityScan(s, data) {
   const vulnRows = data.top_vulns.length
     ? data.top_vulns
         .map(
-          (v) => `
-      <div class="sec-vuln">
+          (v, i) => `
+      <div class="sec-vuln${i >= SCREEN_LIMIT ? " sec-vuln-hidden" : ""}">
         <div class="sec-vuln-top">
           <span class="sec-sev sec-sev-${v.severity.toLowerCase()}">${v.icon}</span>
           <span class="sec-id">${v.id}</span>
@@ -315,9 +416,11 @@ function renderSecurityScan(s, data) {
         .join("")
     : '<div class="sec-clean">[OK] No vulnerabilities found</div>';
 
+  const screenCount = Math.min(data.top_vulns.length, SCREEN_LIMIT);
   const note =
-    data.top_vulns.length < data.total
-      ? `<div class="is-note">Showing top ${data.top_vulns.length} of ${data.total} total vulnerabilities (CRITICAL + HIGH first).</div>`
+    data.total > SCREEN_LIMIT
+      ? `<div class="is-note screen-only">Showing top ${screenCount} of ${data.total} total vulnerabilities (CRITICAL + HIGH first). Export report to view all.</div>
+         <div class="is-note print-only">Full export: ${data.total} total vulnerabilities.</div>`
       : "";
 
   document.getElementById("res-pane").innerHTML = `
@@ -341,7 +444,8 @@ function renderSecurityScan(s, data) {
     <div class="res-line" data-s="score">
       <span class="res-tag-pill tag-score">SCORE</span>
       <span class="res-body">Security verdict: ${data.grade} — ${data.total} CVEs total</span>
-    </div>`;
+    </div>
+    ${PRINT_BTN}`;
 }
 
 function renderImageSize(s, data) {
@@ -393,12 +497,30 @@ Total compressed size reported by docker image inspect.</div>
     <div class="res-line" data-s="score">
       <span class="res-tag-pill tag-score">SCORE</span>
       <span class="res-body">Size verdict: ${data.grade} — ${data.total_mb} MB</span>
-    </div>`;
+    </div>
+    ${PRINT_BTN}`;
 }
 
 function showResult(id) {
   const s = scanCache[id];
   if (!s) return;
+
+  // ── Show a proper in-progress state instead of fake "complete" ──
+  if (s.status === "pending" || s.status === "running") {
+    document.getElementById("res-pane").innerHTML = `
+      <div class="res-meta">
+        <span class="res-tag">ID: <b>#${s.id}</b></span>
+        <span class="res-tag">Status: <b style="color:${scanStatusColor(s)}">${scanStatusLabel(s)}</b></span>
+        <span class="res-tag">At: <b>${s.submitted}</b></span>
+        <span class="res-tag">Duration: <b>—</b></span>
+      </div>
+      <div class="res-line" data-s="info">
+        <span class="res-body" style="color:var(--blue)">
+          Scan in progress — results will appear automatically when complete.
+        </span>
+      </div>`;
+    return;
+  }
 
   try {
     const data = JSON.parse(s.result);
@@ -436,9 +558,9 @@ function showResult(id) {
               return `<div class="res-group-header">Service: ${l.slice(9, -1).trim().toLowerCase()}</div>`;
             const st = lineStatus(l);
             return `<div class="res-line" data-s="${st}">
-              ${st ? `<span class="res-tag-pill tag-${st}">${st.toUpperCase()}</span>` : ""}
-              <span class="res-body">${l.replace(/^\[\w+\]\s*/, "")}</span>
-            </div>`;
+            ${st ? `<span class="res-tag-pill tag-${st}">${st.toUpperCase()}</span>` : ""}
+            <span class="res-body">${l.replace(/^\[\w+\]\s*/, "")}</span>
+          </div>`;
           })
           .join("") ||
         '<div class="res-line" data-s="ok"><span class="res-body">Analysis complete — no issues found.</span></div>'
@@ -545,6 +667,20 @@ function applyStats(s) {
       ).join("");
     }
   }
+
+  // ── status bar scanner count ──────────────────────────
+  const sbEngine = document.querySelector(".sb-engine");
+  if (sbEngine) {
+    if (s.scanners) {
+      sbEngine.style.color = "var(--green)";
+      sbEngine.childNodes[sbEngine.childNodes.length - 1].textContent =
+        " Engine running";
+    } else {
+      sbEngine.style.color = "var(--red)";
+      sbEngine.childNodes[sbEngine.childNodes.length - 1].textContent =
+        " Engine stopped";
+    }
+  }
 }
 
 function upsertCard(s) {
@@ -570,7 +706,12 @@ function upsertCard(s) {
 
   const existing = feed.querySelector(`[data-id="${s.id}"]`);
   if (existing) {
+    const wasSelected = existing.classList.contains("selected"); // ← add
     existing.outerHTML = html;
+    if (wasSelected) {
+      // ← add
+      feed.querySelector(`[data-id="${s.id}"]`).classList.add("selected");
+    }
   } else {
     feed.insertAdjacentHTML("afterbegin", html);
   }
@@ -660,9 +801,20 @@ socket.on("scan_update", (scan) => {
     (scan.status === "passed" || scan.status === "failed") &&
     scan.result !== undefined
   ) {
-    selectScan(scan.id);
+    const isSelected = !!document.querySelector(
+      `.scan-card.selected[data-id="${scan.id}"]`,
+    );
+    const isPending = pendingAutoSelect === scan.id;
+
+    if (isPending) pendingAutoSelect = null;
+
+    if (isPending || isSelected) {
+      selectScan(scan.id); // only re-render if relevant
+    }
   }
 });
+
+socket.on("stats_update", (st) => applyStats(st));
 
 socket.on("feed_cleared", () => {
   scanCache = {};
