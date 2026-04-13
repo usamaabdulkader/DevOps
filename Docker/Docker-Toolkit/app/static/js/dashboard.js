@@ -94,17 +94,35 @@ const TNAMES = {
   image_size: "Image Size Analyser",
   security: "Security Scanner",
 };
+function lineStatus(l) {
+  if (l.startsWith("[OK]")) return "ok";
+  if (l.startsWith("[WARN]")) return "warn";
+  if (l.startsWith("[ERR]")) return "err";
+  if (l.startsWith("[FAIL]")) return "err";
+  if (l.startsWith("[INFO]")) return "info";
+  if (l.startsWith("[SCORE]")) return "score";
+  return "";
+}
+
+// ── Security Helper ───────────────────────────────────────────
+function escapeHTML(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 
 function downloadPDF() {
   const el = document.getElementById("res-pane");
-
 
   // Save res-pane's own styles
   const originalBg = el.style.background;
   const originalColor = el.style.color;
   el.style.background = "#0d1117";
   el.style.color = "#e6edf3";
-
 
   // Show/hide for export
   el.querySelectorAll(".sec-vuln-hidden").forEach(
@@ -116,7 +134,6 @@ function downloadPDF() {
   el.querySelectorAll(".print-only").forEach(
     (v) => (v.style.display = "block"),
   );
-
 
   // Snapshot + inline all computed styles so html2canvas sees them
   const snapshots = [];
@@ -143,11 +160,9 @@ function downloadPDF() {
     }
   });
 
-
   const imageName = (
     el.querySelector(".is-image-name")?.textContent?.trim() || "scan-report"
-  ).replace(/[^a-zA-Z0-9._-]/g, "-"); // sanitise for filename
-
+  ).replace(/[^a-zA-Z0-9._-]/g, "-");
 
   const opt = {
     margin: [2, 2, 2, 2],
@@ -157,16 +172,23 @@ function downloadPDF() {
     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
   };
 
+  toast("", "Exporting PDF", "Please wait while your report is generated...");
 
   html2pdf()
     .set(opt)
     .from(el)
     .save()
     .then(() => {
-      // Restore res-pane
+      toast("", "Export Complete", "Your PDF has been downloaded.");
+    })
+    .catch((err) => {
+      console.error("PDF generation failed:", err);
+      toast("", "Export Failed", "Could not generate PDF.");
+    })
+    .finally(() => {
+      // ── ALWAYS RESTORE UI HERE ──
       el.style.background = originalBg;
       el.style.color = originalColor;
-
 
       // Restore all child nodes
       snapshots.forEach(({ node, bg, color, border }) => {
@@ -174,7 +196,6 @@ function downloadPDF() {
         node.style.color = color;
         node.style.borderColor = border;
       });
-
 
       // Restore visibility
       el.querySelectorAll(".sec-vuln-hidden").forEach(
@@ -188,15 +209,7 @@ function downloadPDF() {
 }
 
 
-function lineStatus(l) {
-  if (l.startsWith("[OK]")) return "ok";
-  if (l.startsWith("[WARN]")) return "warn";
-  if (l.startsWith("[ERR]")) return "err";
-  if (l.startsWith("[FAIL]")) return "err";
-  if (l.startsWith("[INFO]")) return "info";
-  if (l.startsWith("[SCORE]")) return "score";
-  return "";
-}
+
 
 // ── Build sidebar nav ─────────────────────────────────────────
 let activeTool = null;
@@ -238,9 +251,11 @@ function selectTool(t) {
   } else {
     hint.style.display = "none";
   }
-
-  document.getElementById("payload").placeholder =
-    t.hint || "Paste your input here…";
+  // Clear payload and reset character count
+  const ta = document.getElementById("payload");
+  ta.value = "";
+  ta.placeholder = t.hint || "Paste your input here…";
+  updateCC();
 
   document.getElementById("run-btn").disabled = false;
 }
@@ -406,11 +421,11 @@ function renderSecurityScan(s, data) {
       <div class="sec-vuln${i >= SCREEN_LIMIT ? " sec-vuln-hidden" : ""}">
         <div class="sec-vuln-top">
           <span class="sec-sev sec-sev-${v.severity.toLowerCase()}">${v.icon}</span>
-          <span class="sec-id">${v.id}</span>
-          <span class="sec-pkg">${v.pkg} ${v.installed}</span>
-          <span class="sec-fix ${v.fixed === "no fix available" ? "no-fix" : ""}">${v.fixed}</span>
+          <span class="sec-id">${escapeHTML(v.id)}</span>
+          <span class="sec-pkg">${escapeHTML(v.pkg)} ${escapeHTML(v.installed)}</span>
+          <span class="sec-fix ${v.fixed === "no fix available" ? "no-fix" : ""}">${escapeHTML(v.fixed)}</span>
         </div>
-        ${v.title ? `<div class="sec-title">${v.title}</div>` : ""}
+        ${v.title ? `<div class="sec-title">${escapeHTML(v.title)}</div>` : ""}
       </div>`,
         )
         .join("")
@@ -431,7 +446,7 @@ function renderSecurityScan(s, data) {
       <span class="res-tag">Duration: <b>${s.duration !== "-" ? s.duration + "s" : "—"}</b></span>
     </div>
     <div class="is-header">
-      <div class="is-image-name">${data.image}</div>
+      <div class="is-image-name">${escapeHTML(data.image)}</div>
       <div class="is-total">
         <span class="is-total-val">${data.total} CVEs</span>
         <span class="is-grade" style="color:${col};border-color:${col}">${data.grade}</span>
@@ -606,9 +621,17 @@ document.getElementById("run-btn").addEventListener("click", async () => {
     const fd = new FormData();
     fd.append("tool", TNAMES[activeTool.id]);
     fd.append("payload", payload);
+
+    // Catch non-200 HTTP responses here
     const res = await fetch("/analyse", { method: "POST", body: fd }).then(
-      (r) => r.json(),
+      async (r) => {
+        if (!r.ok) {
+          throw new Error(`Server error: ${r.status}`);
+        }
+        return r.json();
+      },
     );
+
     toast("", "Analysis queued", `scan #${res.scan_id} processing`);
     pendingAutoSelect = res.scan_id;
   } catch (err) {
@@ -720,12 +743,6 @@ function upsertCard(s) {
   document.getElementById("feed-ct").textContent =
     total + " scan" + (total !== 1 ? "s" : "");
 
-  if (
-    pendingAutoSelect === s.id &&
-    (s.status === "passed" || s.status === "failed")
-  ) {
-    pendingAutoSelect = null;
-  }
 }
 
 function renderFeedFromCache() {
