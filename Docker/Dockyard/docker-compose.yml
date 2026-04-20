@@ -6,13 +6,13 @@ services:
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - SECRET_KEY=docker-toolkit-secret
+      - SECRET_KEY=dockyard-secret
     depends_on:
       redis:
         condition: service_healthy
     restart: unless-stopped
     networks:
-      - app-net
+      - dockyard-net
 
   scanner:
     build: ./app
@@ -25,7 +25,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     networks:
-      - app-net
+      - dockyard-net
     volumes: # Mount Docker socket so the scanner can run `docker compose config`
       - /var/run/docker.sock:/var/run/docker.sock:ro
     stop_grace_period: 15s   # ← give SIGTERM handler time to run before SIGKILL
@@ -41,7 +41,7 @@ services:
       retries: 5
     restart: unless-stopped
     networks:
-      - app-net
+      - dockyard-net
 
   nginx:
     image: nginx:alpine
@@ -53,11 +53,11 @@ services:
       - web
     restart: unless-stopped
     networks:
-      - app-net
+      - dockyard-net
 
 volumes:
   redis-data:
 
 networks:
-  app-net:
+  dockyard-net:
     driver: bridge
